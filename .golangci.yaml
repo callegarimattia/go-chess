@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+run:
+  timeout: 5m
+  allow-parallel-runners: true
+linters:
+  fast: true
+  presets:
+    - bugs
+    - comment
+    - error
+    - format
+    - import
+    - module
+    - performance
+    - style
+    - test
+    - unused
+  disable:
+    - depguard
+    - mnd
+    - godox

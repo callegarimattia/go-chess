@@ -2,6 +2,14 @@ package model
 
 import (
 	"fmt"
+	"io"
+)
+
+const (
+	secondRank       BitBoard = 0x00FF000000000000
+	seventhRank      BitBoard = 0x000000000000FF00
+	rightPawnCapture BitBoard = 0x8080808080808080
+	leftPawnCapture  BitBoard = 0x0101010101010101
 )
 
 // A Board is represented by a 64bit unsigned integer for each piece, black and white.
@@ -20,6 +28,10 @@ type Board struct {
 	blackRooks   BitBoard
 	blackQueens  BitBoard
 	blackKing    BitBoard
+
+	enemyPieces     BitBoard
+	emptySquares    BitBoard
+	attackedSquares BitBoard
 
 	turn Player
 }
@@ -48,9 +60,11 @@ func (b *Board) setupWhitePieces() {
 	b.whiteKing = 0x0800000000000000
 }
 
+// GetPieceBoards returns the bitboards represeting the full state of the board.
+// They are returned in order, white pieces first, low to high value.
 func (b *Board) GetPieceBoards() func(func(int, BitBoard) bool) {
 	return func(yield func(int, BitBoard) bool) {
-		bb := [...]BitBoard{
+		bitboards := [...]BitBoard{
 			b.whitePawns,
 			b.whiteKnights,
 			b.whiteBishops,
@@ -65,35 +79,44 @@ func (b *Board) GetPieceBoards() func(func(int, BitBoard) bool) {
 			b.blackQueens,
 			b.blackKing,
 		}
-		for i := 0; i < len(bb); i++ {
-			if !yield(i, bb[i]) {
+		for i := range bitboards {
+			if !yield(i, bitboards[i]) {
 				return
 			}
 		}
 	}
 }
 
-func (b Board) Print() {
+func (b *Board) Print(writer io.Writer) {
 	pieces := []rune("PNBRQKpnbrqk")
-	fmt.Println("  a b c d e f g h")
-	for rank := 0; rank < 8; rank++ {
-		fmt.Print(rank)
-		for file := 0; file < 8; file++ {
+
+	fmt.Fprintln(writer, "  a b c d e f g h")
+
+	for rank := range 8 {
+		fmt.Fprint(writer, rank)
+
+		for file := range 8 {
 			square := 63 - ((rank * 8) + file)
 			printed := false
+
 			for i, bb := range b.GetPieceBoards() {
-				if bb.getBit( square) > 0 {
-					fmt.Printf(" %c", pieces[i])
+				if bb.getBit(square) > 0 {
+					fmt.Fprintf(writer, " %c", pieces[i])
+
 					printed = true
+
 					break
 				}
 			}
+
 			if !printed {
-				fmt.Print(" .")
+				fmt.Fprint(writer, " .")
 			}
 		}
-		fmt.Println()
+
+		fmt.Fprintln(writer)
 	}
-	fmt.Println("  a b c d e f g h")
-	fmt.Printf("Turn: %s\n", b.turn)
+
+	fmt.Fprintln(writer, "  a b c d e f g h")
+	fmt.Fprintf(writer, "Turn: %s\n", b.turn)
 }

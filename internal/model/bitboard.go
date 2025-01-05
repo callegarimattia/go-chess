@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 type BitBoard uint64
 
@@ -20,27 +23,31 @@ func (bb BitBoard) getBit(square int) BitBoard {
 // 	return bb ^ squareBB[square]
 // }
 
-var squareBB [64]BitBoard
+var squareBB [64]BitBoard //nolint: gochecknoglobals
 
-func init() {
-	for i := 0; i < 64; i++ {
+func init() { //nolint:gochecknoinits
+	for i := range 64 {
 		squareBB[i] = 1 << i
 	}
 }
 
-func (b BitBoard) Print() {
-	fmt.Println()
-	for y := 0; y < 8; y++ {
-		for x := 0; x < 8; x++ {
+func (bb BitBoard) Print(writer io.Writer) {
+	fmt.Fprintln(writer)
+
+	for y := range 8 {
+		for x := range 8 {
 			square := 63 - ((y * 8) + x)
-			if bit := b & (1 << square); bit != 0 {
-				fmt.Print("x")
+			if bit := bb & (1 << square); bit != 0 {
+				fmt.Fprint(writer, "x")
 			} else {
-				fmt.Print(".")
+				fmt.Fprint(writer, ".")
 			}
-			fmt.Print(" ")
+
+			fmt.Fprint(writer, " ")
 		}
-		fmt.Println()
+
+		fmt.Fprintln(writer)
 	}
-	fmt.Println()
+
+	fmt.Fprintln(writer)
 }
